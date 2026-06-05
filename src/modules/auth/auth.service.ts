@@ -29,8 +29,38 @@ const registerUserIntoDB = async (payload: IRegisterPayload): Promise<IUser> => 
   return result.rows[0];
 };
 
+const loginUserIntoDB = async (payload: ILoginPayload) => {
+  const { email, password } = payload;
 
+  const result = await pool.query(
+    `SELECT * FROM users WHERE email = $1`,
+    [email]
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error("Invalid credentials");
+  }
+
+  const user = result.rows[0];
+
+  const isMatch = await bcrypt.compare(password, user.password);
+
+  if (!isMatch) {
+    throw new Error("Invalid credentials");
+  }
+
+  const token = jwt.sign(
+    { id: user.id, name: user.name, role: user.role },
+    config.jwt_secret as string,
+    { expiresIn: "7d" }
+  );
+
+  const { password: _removed, ...userWithoutPassword } = user;
+
+  return { token, user: userWithoutPassword };
+};
 
 export const authService = {
   registerUserIntoDB,
+  loginUserIntoDB,
 };
