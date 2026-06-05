@@ -4,6 +4,7 @@ import type {
   IGetIssuesQuery,
   IIssue,
   IIssueWithReporter,
+  IUpdateIssuePayload,
 } from "./issues.interface";
 
 //create issues
@@ -54,7 +55,7 @@ const getAllIssuesFromDB = async (
   query: IGetIssuesQuery,
 ): Promise<IIssueWithReporter[]> => {
   const { sort = "newest", type, status } = query;
-   if (type && !["bug", "feature_request"].includes(type)) {
+  if (type && !["bug", "feature_request"].includes(type)) {
     throw new Error("Invalid type. Must be bug or feature_request");
   }
 
@@ -65,7 +66,7 @@ const getAllIssuesFromDB = async (
   if (sort && !["newest", "oldest"].includes(sort)) {
     throw new Error("Invalid sort. Must be newest or oldest");
   }
-  
+
   const conditions: string[] = [];
   const values: string[] = [];
 
@@ -95,7 +96,7 @@ const getAllIssuesFromDB = async (
 
 //get single issue
 const getSingleIssueFromDB = async (
-  id: string
+  id: string,
 ): Promise<IIssueWithReporter | null> => {
   const result = await pool.query(`SELECT * FROM issues WHERE id = $1`, [id]);
 
@@ -105,8 +106,41 @@ const getSingleIssueFromDB = async (
   return issues[0] ?? null;
 };
 
+//update issue
+const updateIssueIntoDB = async (
+  id: string,
+  payload: IUpdateIssuePayload,
+): Promise<IIssue | null> => {
+  const { title, description, status, type } = payload;
+
+  const result = await pool.query(
+    `UPDATE issues
+     SET
+       title = COALESCE($1, title),
+       description = COALESCE($2, description),
+       type = COALESCE($3, type),
+       status = COALESCE($4, status),
+       updated_at = NOW()
+     WHERE id = $5
+     RETURNING *`,
+    [title ?? null, description ?? null, type ?? null, status ?? null, id],
+  );
+
+  if (result.rows.length === 0) return null;
+  return result.rows[0];
+};
+
+//delete issue
+const deleteIssueFromDB = async (id: string) => {
+  const result = await pool.query(`
+    DELETE FROM issues WHERE id = $1`, [id]);
+  return (result.rowCount);
+};
+
 export const issuesService = {
   createIssueIntoDB,
   getAllIssuesFromDB,
-  getSingleIssueFromDB
+  getSingleIssueFromDB,
+  updateIssueIntoDB,
+  deleteIssueFromDB
 };
