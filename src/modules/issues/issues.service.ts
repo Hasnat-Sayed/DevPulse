@@ -54,10 +54,18 @@ const getAllIssuesFromDB = async (
   query: IGetIssuesQuery,
 ): Promise<IIssueWithReporter[]> => {
   const { sort = "newest", type, status } = query;
-  if (type && !["bug", "feature_request"].includes(type)) {
+   if (type && !["bug", "feature_request"].includes(type)) {
     throw new Error("Invalid type. Must be bug or feature_request");
   }
 
+  if (status && !["open", "in_progress", "resolved"].includes(status)) {
+    throw new Error("Invalid status. Must be open, in_progress or resolved");
+  }
+
+  if (sort && !["newest", "oldest"].includes(sort)) {
+    throw new Error("Invalid sort. Must be newest or oldest");
+  }
+  
   const conditions: string[] = [];
   const values: string[] = [];
 
