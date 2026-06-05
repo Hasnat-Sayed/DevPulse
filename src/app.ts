@@ -4,6 +4,7 @@ import express, {
   type Response,
 } from "express";
 import cors from "cors";
+import { authRouter } from "./modules/auth/auth.route";
 
 const app: Application = express();
 
@@ -17,6 +18,9 @@ app.get("/", (req: Request, res: Response) => {
     author: "Hasnat",
   });
 });
+
+//routes
+app.use("/api/auth", authRouter);
 
 
 export default app;
