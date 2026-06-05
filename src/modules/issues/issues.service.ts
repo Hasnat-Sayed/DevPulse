@@ -93,7 +93,20 @@ const getAllIssuesFromDB = async (
   return attachReporters(result.rows);
 };
 
+//get single issue
+const getSingleIssueFromDB = async (
+  id: string
+): Promise<IIssueWithReporter | null> => {
+  const result = await pool.query(`SELECT * FROM issues WHERE id = $1`, [id]);
+
+  if (result.rows.length === 0) return null;
+
+  const issues = await attachReporters(result.rows);
+  return issues[0] ?? null;
+};
+
 export const issuesService = {
   createIssueIntoDB,
   getAllIssuesFromDB,
+  getSingleIssueFromDB
 };
