@@ -14,3 +14,17 @@ export interface IIssue {
   created_at: string;
   updated_at: string;
 }
+
+export interface IIssueWithReporter extends Omit<IIssue, "reporter_id"> {
+  reporter: {
+    id: number;
+    name: string;
+    role: string;
+  }| null;
+}
+
+export interface IGetIssuesQuery {
+  sort?: string | undefined;
+  type?: string | undefined;
+  status?: string | undefined;
+}
