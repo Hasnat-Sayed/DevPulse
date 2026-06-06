@@ -1,10 +1,16 @@
 import type { Request, Response, NextFunction } from "express";
 import { authService } from "./auth.service";
 import sendResponse from "../../utility/sendResponse";
+import { validateLogin, validateRegister } from "../../utility/validateFields";
 
 
 const registerUser = async (req: Request, res: Response) => {
   try {
+    const validationError = validateRegister(req.body);
+    if (validationError) {
+      sendResponse(res, { statusCode: 400, success: false, message: validationError });
+      return;
+    }
     const result = await authService.registerUserIntoDB(req.body);
     // console.log(result);
 
@@ -26,6 +32,11 @@ const registerUser = async (req: Request, res: Response) => {
 
 const loginUser = async (req: Request, res: Response) => {
   try {
+    const validationError = validateLogin(req.body);
+    if (validationError) {
+      sendResponse(res, { statusCode: 400, success: false, message: validationError });
+      return;
+    }
     const result = await authService.loginUserIntoDB(req.body);
 
     sendResponse(res, {
@@ -35,7 +46,8 @@ const loginUser = async (req: Request, res: Response) => {
       data: result,
     });
   } catch (error: any) {
-    res.status(500).json({
+    sendResponse(res, {
+      statusCode: 500,
       success: false,
       message: error.message,
       error: error,

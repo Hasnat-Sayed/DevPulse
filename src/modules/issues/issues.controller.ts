@@ -2,10 +2,16 @@ import type { Request, Response, NextFunction } from "express";
 import { issuesService } from "./issues.service";
 import sendResponse from "../../utility/sendResponse";
 import type { IGetIssuesQuery } from "./issues.interface";
+import { validateCreateIssue, validateGetIssues, validateUpdateIssue } from "../../utility/validateFields";
 
 //create issue
 const createIssue = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const validationError = validateCreateIssue(req.body);
+    if (validationError) {
+      sendResponse(res, { statusCode: 400, success: false, message: validationError, });
+      return;
+    }
     const reporterId = req.user?.id as number;
     const result = await issuesService.createIssueIntoDB(req.body, reporterId);
 
@@ -21,19 +27,17 @@ const createIssue = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 //get all issues
-const getAllIssues = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+const getAllIssues = async (req: Request, res: Response, next: NextFunction,) => {
   try {
     const { sort, type, status } = req.query as IGetIssuesQuery;
 
-    const result = await issuesService.getAllIssuesFromDB({
-      sort,
-      type,
-      status,
-    });
+    const validationError = validateGetIssues({ sort, type, status }) ;
+    if (validationError) {
+      sendResponse(res, { statusCode: 400, success: false, message: validationError });
+      return;
+    }
+
+    const result = await issuesService.getAllIssuesFromDB({sort, type, status,});
 
     sendResponse(res, {
       statusCode: 200,
@@ -47,29 +51,18 @@ const getAllIssues = async (
 };
 
 //get single issue
-const getSingleIssue = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+const getSingleIssue = async (req: Request, res: Response, next: NextFunction,) => {
   try {
-    const result = await issuesService.getSingleIssueFromDB(
-      req.params.id as string,
-    );
+    const result = await issuesService.getSingleIssueFromDB(req.params.id as string,);
 
     if (!result) {
       sendResponse(res, {
-        statusCode: 404,
-        success: false,
-        message: "Issue not found",
+        statusCode: 404, success: false, message: "Issue not found",
       });
     }
 
     sendResponse(res, {
-      statusCode: 200,
-      success: true,
-      message: "Issue retrived successfully",
-      data: result,
+      statusCode: 200, success: true, message: "Issue retrived successfully", data: result,
     });
   } catch (error) {
     next(error);
@@ -78,17 +71,18 @@ const getSingleIssue = async (
 
 const updateIssue = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const validationError = validateUpdateIssue(req.body);
+    if (validationError) {
+      sendResponse(res, { statusCode: 400, success: false, message: validationError });
+      return;
+    }
     const { id } = req.params;
     const user = req.user!;
 
     const existing = await issuesService.getSingleIssueFromDB(id as string);
 
     if (!existing) {
-      sendResponse(res, {
-        statusCode: 404,
-        success: false,
-        message: "Issue not found",
-      });
+      sendResponse(res, { statusCode: 404, success: false, message: "Issue not found"});
       return;
     }
 
@@ -112,16 +106,10 @@ const updateIssue = async (req: Request, res: Response, next: NextFunction) => {
       }
     }
 
-    const result = await issuesService.updateIssueIntoDB(
-      id as string,
-      req.body,
-    );
+    const result = await issuesService.updateIssueIntoDB(id as string, req.body,);
 
     sendResponse(res, {
-      statusCode: 200,
-      success: true,
-      message: "Issue updated successfully",
-      data: result,
+      statusCode: 200, success: true, message: "Issue updated successfully", data: result,
     });
   } catch (error) {
     next(error);
@@ -130,23 +118,15 @@ const updateIssue = async (req: Request, res: Response, next: NextFunction) => {
 
 const deleteIssue = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const deleted = await issuesService.deleteIssueFromDB(
-      req.params.id as string,
-    );
+    const deleted = await issuesService.deleteIssueFromDB( req.params.id as string);
 
     if (deleted === 0) {
-      sendResponse(res, {
-        statusCode: 404,
-        success: false,
-        message: "Issue not found",
-      });
+      sendResponse(res, { statusCode: 404, success: false, message: "Issue not found",});
       return;
     }
 
     sendResponse(res, {
-      statusCode: 200,
-      success: true,
-      message: "Issue deleted successfully",
+      statusCode: 200, success: true, message: "Issue deleted successfully",
     });
   } catch (error) {
     next(error);
